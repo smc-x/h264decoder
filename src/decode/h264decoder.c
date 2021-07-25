@@ -90,14 +90,19 @@ int h264decoder_available(h264decoder* decoder) {
 }
 
 int h264decoder_decode(h264decoder* decoder) {
-    int ret = avcodec_send_packet(decoder->context, decoder->pkt);
-    if (ret == 0) {
-        ret = avcodec_receive_frame(decoder->context, decoder->frame);
-        if (ret == 0) {
-            return 0;
-        }
+    int err;
+
+    err = avcodec_send_packet(decoder->context, decoder->pkt);
+    if (err < 0) {
+        return err;
     }
-    return -1;
+
+    err = avcodec_receive_frame(decoder->context, decoder->frame);
+    if (err < 0) {
+        return err;
+    }
+
+    return 0;
 }
 
 int h264decoder_frame_to_jpeg(h264decoder* decoder, uint8_t** data, size_t* size) {
