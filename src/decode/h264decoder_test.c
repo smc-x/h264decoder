@@ -1,28 +1,30 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include <libavcodec/avcodec.h>
-
 #include "h264decoder.h"
-
 
 
 const size_t buffer_size = 1024;
 
 int main(int argc, char* argv[]) {
-    if (argc != 2) {
-        printf("usage: {program_name} {path_to_h264_file}\n");
+    if (argc != 2 && argc != 3) {
+        printf("usage: {program_name} {path_to_h264_file} [no_output]\n");
         return -1;
+    }
+
+    int no_output = 0;
+    if (argc == 3) {
+        no_output = 1;
     }
 
     // Allocate buffer
     char buffer[buffer_size];
 
     // Open file
-    const char* filename = argv[1];
-    FILE* fp = fopen(filename, "rb");
-    if (!fp) {
-        printf("failed opening file %s\n", filename);
+    const char* v_filename = argv[1];
+    FILE* v_fp = fopen(v_filename, "rb");
+    if (!v_fp) {
+        printf("failed opening file %s\n", v_filename);
         return -1;
     }
 
@@ -35,15 +37,16 @@ int main(int argc, char* argv[]) {
     const char* hint = h264decoder_init(decoder_ptr, &code);
     if (code != 0) {
         printf("failed initializing the decoder: %s\n", hint);
-        fclose(fp);
+        fclose(v_fp);
         return -1;
     }
 
     // Decode video
     size_t nread, nparsed;
     size_t nframes = 0;
+    int is_keyframe = 0;
     while (1) {
-        nread = fread(buffer, 1, buffer_size, fp);
+        nread = fread(buffer, 1, buffer_size, v_fp);
         if (nread == 0) {
             break;
         }
@@ -54,27 +57,29 @@ int main(int argc, char* argv[]) {
             nread -= nparsed;
             data += nparsed;
             if (h264decoder_available(decoder_ptr)) {
-                h264decoder_decode(decoder_ptr);
+                h264decoder_decode(decoder_ptr, &is_keyframe);
                 nframes++;
 
-                uint8_t* image = NULL;
-                size_t image_size = 0;
-                h264decoder_frame_to_jpeg(decoder_ptr, &image, &image_size);
-                if (image_size) {
-                    char filename[20];
-                    sprintf(filename, "out%03d.jpg", nframes);
-                    FILE* fp_write = fopen(filename, "wb");
-                    fwrite(image, 1, image_size, fp_write);
-                    fclose(fp_write);
+                if (!no_output) {
+                    uint8_t* image = NULL;
+                    size_t image_size = 0;
+                    h264decoder_frame_to_jpeg(decoder_ptr, &image, &image_size);
+                    if (image_size) {
+                        char i_filename[20];
+                        sprintf(i_filename, "out%03d.jpg", nframes);
+                        FILE* i_fp = fopen(i_filename, "wb");
+                        fwrite(image, 1, image_size, i_fp);
+                        fclose(i_fp);
+                    }
                 }
 
-                printf("frame decoded: %d, keyframe: %d\n", nframes, decoder_ptr->frame->key_frame);
+                printf("frame decoded: %d, keyframe: %d\n", nframes, is_keyframe);
             }
         }
     };
 
     // Cleanup
     h264decoder_free(decoder_ptr);
-    fclose(fp);
+    fclose(v_fp);
     return 0;
 }

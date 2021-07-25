@@ -76,7 +76,7 @@ void h264decoder_free(h264decoder* decoder) {
     av_packet_free(&decoder->pkt);
 }
 
-int h264decoder_parse(h264decoder* decoder, const uint8_t* in_data, int in_size) {
+int h264decoder_parse(h264decoder* decoder, const uint8_t* in_data, size_t in_size) {
     return av_parser_parse2(
         decoder->parser, decoder->context,
         &decoder->pkt->data, &decoder->pkt->size,
@@ -89,19 +89,19 @@ int h264decoder_available(h264decoder* decoder) {
     return decoder->pkt->size > 0;
 }
 
-int h264decoder_decode(h264decoder* decoder) {
+int h264decoder_decode(h264decoder* decoder, int* is_keyframe) {
     int err;
 
     err = avcodec_send_packet(decoder->context, decoder->pkt);
     if (err < 0) {
         return err;
     }
-
     err = avcodec_receive_frame(decoder->context, decoder->frame);
     if (err < 0) {
         return err;
     }
 
+    *is_keyframe = decoder->frame->key_frame;
     return 0;
 }
 

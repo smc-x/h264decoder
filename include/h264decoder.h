@@ -42,7 +42,7 @@ void h264decoder_free(h264decoder* decoder);
  * @param[in] in_size the data size to parse
  * @return the number of parsed bytes
  */
-int h264decoder_parse(h264decoder* decoder, const uint8_t* in_data, int in_size);
+int h264decoder_parse(h264decoder* decoder, const uint8_t* in_data, size_t in_size);
 
 /**
  * h264decoder_available tests if there is a ready frame.
@@ -54,9 +54,10 @@ int h264decoder_available(h264decoder* decoder);
 /**
  * h264decoder_decode decodes a frame. On success, the frame can be accessed via the decoder.
  * @param[in] decoder the h264decoder to use
+ * @param[out] is_keyframe 0 if the decoded frame is a keyframe, 1 otherwise
  * @return 0 on success, a negative integer otherwise
  */
-int h264decoder_decode(h264decoder* decoder);
+int h264decoder_decode(h264decoder* decoder, int* is_keyframe);
 
 /**
  * h264decoder_frame_to_jpeg encodes a frame to jpeg for exporting.
