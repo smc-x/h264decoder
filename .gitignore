@@ -61,4 +61,6 @@ target/
 dist/
 *.egg-info/
 *build*/
-testclip.h264
+
+*.mp4
+*.h264
