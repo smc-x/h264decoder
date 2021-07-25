@@ -4,7 +4,7 @@
 #include "h264decoder.h"
 
 
-const size_t buffer_size = 1024;
+const size_t BUFFER_SIZE = 1024;
 
 int main(int argc, char* argv[]) {
     if (argc != 2 && argc != 3) {
@@ -18,7 +18,7 @@ int main(int argc, char* argv[]) {
     }
 
     // Allocate buffer
-    char buffer[buffer_size];
+    char buffer[BUFFER_SIZE];
 
     // Open file
     const char* v_filename = argv[1];
@@ -46,7 +46,7 @@ int main(int argc, char* argv[]) {
     size_t nframes = 0;
     int is_keyframe = 0;
     while (1) {
-        nread = fread(buffer, 1, buffer_size, v_fp);
+        nread = fread(buffer, 1, BUFFER_SIZE, v_fp);
         if (nread == 0) {
             break;
         }
