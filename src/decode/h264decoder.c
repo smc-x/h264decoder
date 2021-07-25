@@ -41,15 +41,37 @@ const char* h264decoder_init(h264decoder* decoder, int* code) {
         return "cannot allocate packet";
     }
 
+    // Get the specific export codec
+    decoder->exp_codec = avcodec_find_encoder(AV_CODEC_ID_MJPEG);
+    if (!decoder->exp_codec) {
+        return "cannot find encoder";
+    }
+
+    // Allocate export context
+    decoder->exp_context = avcodec_alloc_context3(decoder->exp_codec);
+    if (!decoder->exp_context) {
+        return "cannot allocate export context";
+    }
+
+    // Mark un-initialized export context
+    decoder->exp_init = 0;
+
     // Everything is good
     *code = 0;
     return "";
 }
 
 void h264decoder_free(h264decoder* decoder) {
+    if (decoder->exp_init) {
+        avcodec_close(decoder->exp_context);
+    }
+    avcodec_free_context(&decoder->exp_context);
+
     av_parser_close(decoder->parser);
+
     avcodec_close(decoder->context);
-    av_free(decoder->context);
+    avcodec_free_context(&decoder->context);
+
     av_frame_free(&decoder->frame);
     av_packet_free(&decoder->pkt);
 }
@@ -76,4 +98,51 @@ int h264decoder_decode(h264decoder* decoder) {
         }
     }
     return -1;
+}
+
+int h264decoder_frame_to_jpeg(h264decoder* decoder, uint8_t** data, size_t* size) {
+    int err;
+
+    if (!decoder->exp_init) {
+        decoder->exp_context->time_base.den = decoder->context->time_base.den;
+        decoder->exp_context->time_base.num = decoder->context->time_base.num;
+        decoder->exp_context->pix_fmt = AV_PIX_FMT_YUVJ420P;
+        decoder->exp_context->height = decoder->frame->height;
+        decoder->exp_context->width = decoder->frame->width;
+        err = avcodec_open2(decoder->exp_context, decoder->exp_codec, NULL);
+        if (err < 0) {
+            return err;
+        }
+        decoder->exp_init = 1;
+    }
+
+    // Allocate a packet for storing the encoded frame
+    AVPacket* packet = av_packet_alloc();
+    if (!packet) {
+        return -1;
+    }
+
+    // Encode the frame
+    err = avcodec_send_frame(decoder->exp_context, decoder->frame);
+    if (err < 0) {
+        return err;
+    }
+    err = avcodec_receive_packet(decoder->exp_context, packet);
+    if (err < 0) {
+        return err;
+    }
+
+    // Copy the data if got frame
+    if (packet->size) {
+        *size = packet->size;
+        *data = malloc(packet->size);
+        memcpy(*data, packet->data, packet->size);
+    } else {
+        *size = 0;
+        *data = NULL;
+    }
+
+    // Free the packet
+    av_packet_unref(packet);
+    return 0;
 }

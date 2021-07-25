@@ -7,11 +7,18 @@
  * h264decoder encapsulates variables required to decode an h264 video.
  */
 typedef struct h264decoder {
+    /* for video decoding */
     AVCodec* codec;
     AVCodecContext* context;
     AVCodecParserContext* parser;
+
     AVFrame* frame;
     AVPacket* pkt;
+
+    /* for image exporting */
+    AVCodec* exp_codec;
+    AVCodecContext* exp_context;
+    int exp_init;
 } h264decoder;
 
 /**
@@ -50,5 +57,14 @@ int h264decoder_available(h264decoder* decoder);
  * @return 0 on success, a negative integer otherwise
  */
 int h264decoder_decode(h264decoder* decoder);
+
+/**
+ * h264decoder_frame_to_jpeg encodes a frame to jpeg for exporting.
+ * @param[in] decoder the h264decoder to use
+ * @param[out] data the encoded image
+ * @param[out] size the encoded image size
+ * @return 0 on success, a negative integer otherwise
+ */
+int h264decoder_frame_to_jpeg(h264decoder* decoder, uint8_t** data, size_t* size);
 
 #endif

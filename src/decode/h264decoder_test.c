@@ -1,7 +1,11 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#include <libavcodec/avcodec.h>
+
 #include "h264decoder.h"
+
+
 
 const size_t buffer_size = 1024;
 
@@ -52,6 +56,18 @@ int main(int argc, char* argv[]) {
             if (h264decoder_available(decoder_ptr)) {
                 h264decoder_decode(decoder_ptr);
                 nframes++;
+
+                uint8_t* image = NULL;
+                size_t image_size = 0;
+                h264decoder_frame_to_jpeg(decoder_ptr, &image, &image_size);
+                if (image_size) {
+                    char filename[20];
+                    sprintf(filename, "out%03d.jpg", nframes);
+                    FILE* fp_write = fopen(filename, "wb");
+                    fwrite(image, 1, image_size, fp_write);
+                    fclose(fp_write);
+                }
+
                 printf("frame decoded: %d, keyframe: %d\n", nframes, decoder_ptr->frame->key_frame);
             }
         }
