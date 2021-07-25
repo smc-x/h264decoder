@@ -12,5 +12,5 @@ set -x
 ffmpeg \
     -i ${INPUT} \
     -c:v libx264 \
-    -g ${IF} -keyint_min ${IF} \
+    -g ${IF} -keyint_min ${IF} -bf 0 \
     ${OUTPUT}
