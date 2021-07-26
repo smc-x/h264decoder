@@ -84,7 +84,7 @@ int main(int argc, char* argv[]) {
                     h264decoder_frame_to_jpeg(decoder_ptr, &image, &image_size);
                     if (image_size) {
                         char i_filename[20];
-                        sprintf(i_filename, "out%03d.jpg", nframes);
+                        sprintf(i_filename, "%s.%03d.jpg", v_filename, nframes);
                         FILE* i_fp = fopen(i_filename, "wb");
                         fwrite(image, 1, image_size, i_fp);
                         fclose(i_fp);
