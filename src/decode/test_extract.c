@@ -5,9 +5,6 @@
 
 const size_t BUFFER_SIZE = 1024;
 
-#define ERR_BUF_SIZE 1024
-char err_buf[ERR_BUF_SIZE] = {0};
-
 int main(int argc, char* argv[]) {
     if (argc != 2 && argc != 3) {
         printf("usage: {program_name} {path_to_h264_file} [no_output]\n");
