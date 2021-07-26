@@ -3,7 +3,6 @@
 
 #include "h264decoder.h"
 
-
 const size_t BUFFER_SIZE = 1024;
 
 #define ERR_BUF_SIZE 1024
@@ -60,12 +59,9 @@ int main(int argc, char* argv[]) {
             nread -= nparsed;
             data += nparsed;
             printf("nparsed: %d\n", nparsed);
+
             if (h264decoder_available(decoder_ptr)) {
                 h264decoder_decode(decoder_ptr, &is_keyframe);
-
-                printf("frame format: %d\n", decoder_ptr->frame->format);
-                printf("frame width: %d\n", decoder_ptr->frame->width);
-                printf("frame height: %d\n", decoder_ptr->frame->height);
 
                 if (!no_output) {
                     uint8_t* image = NULL;
@@ -85,32 +81,6 @@ int main(int argc, char* argv[]) {
             }
         }
     };
-
-    {
-        int err = h264decoder_decode(decoder_ptr, &is_keyframe);
-        av_strerror(err, err_buf, ERR_BUF_SIZE);
-        printf("decode err: %s\n", err_buf);
-
-        decoder_ptr->frame->format = 0;
-        decoder_ptr->frame->width = 1280;
-        decoder_ptr->frame->height = 720;
-
-        if (!no_output) {
-            uint8_t* image = NULL;
-            size_t image_size = 0;
-            h264decoder_frame_to_jpeg(decoder_ptr, &image, &image_size);
-            if (image_size) {
-                char i_filename[20];
-                sprintf(i_filename, "out%03d.jpg", nframes);
-                FILE* i_fp = fopen(i_filename, "wb");
-                fwrite(image, 1, image_size, i_fp);
-                fclose(i_fp);
-            }
-        }
-
-        printf("frame decoded: %d, keyframe: %d\n", nframes, is_keyframe);
-        nframes++;
-    }
 
     // Cleanup
     h264decoder_free(decoder_ptr);
