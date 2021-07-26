@@ -52,6 +52,11 @@ int main(int argc, char* argv[]) {
         return -1;
     }
 
+    // Workaround for decoding the tail frame
+    char fake_bytes[5];
+    int fake_initialized = 0;
+    int fake_injected = 0;
+
     // Decode video
     size_t nread, nparsed;
 
@@ -63,13 +68,26 @@ int main(int argc, char* argv[]) {
     int is_keyframe = 0;
     int first_keyframe = 1;
 
+    const char* data;
     while (1) {
         nread = fread(buffer, 1, BUFFER_SIZE, v_fp);
+
         if (nread == 0) {
-            break;
+            if (fake_injected) {
+                break;
+            } else {
+                data = &fake_bytes[0];
+                nread = 5;
+                fake_injected = 1;
+            }
+        } else {
+            if (!fake_initialized) {
+                memcpy(fake_bytes, buffer, 5);
+                fake_initialized = 1;
+            }
+            data = &buffer[0];
         }
 
-        const char* data = &buffer[0];
         while (nread > 0) {
             nparsed = h264decoder_parse(decoder_ptr, data, nread);
             memcpy(gop_buffer + gop_buffer_len, data, nparsed);
@@ -96,8 +114,8 @@ int main(int argc, char* argv[]) {
     };
 
     // Save the last gop
-    if (gop_buffer_len != 0) {
-        save_gop(gop_buffer_len, ngops);
+    if (gop_len != 0) {
+        save_gop(gop_len, ngops);
     }
 
     // Cleanup
